@@ -123,8 +123,8 @@ for pref in PREF:
     ds = data.groupby(['確定日', '受診都道府県'], as_index=False).sum()
     dsp = ds[ds['受診都道府県']==pref]
     dsp['累積人数'] = dsp['人数'].cumsum()
-    dsp = dsp.rename(columns={'確定日': 'date', '受診都道府県': 'state'})
-    dspi = dsp.set_index(['state', 'date'])
+    dsp = dsp.rename(columns={'確定日': 'date', '受診都道府県': 'pref'})
+    dspi = dsp.set_index(['pref', 'date'])
     df_all = pd.concat([df_all, dspi])
 states = df_all['累積人数']
 
@@ -133,12 +133,12 @@ states = df_all['累積人数']
 # Choosing the optimal sigma
 sigmas = np.linspace(1/20, 1, 20)
 
-targets = ~states.index.get_level_values('state').isin(FILTERED_REGION)
+targets = ~states.index.get_level_values('pref').isin(FILTERED_REGION)
 states_to_process = states.loc[targets]
 
 results = {}
 
-for state_name, cases in states_to_process.groupby(level='state'):
+for state_name, cases in states_to_process.groupby(level='pref'):
 
     print(state_name)
     new, smoothed = prepare_cases(cases, cutoff=0)
