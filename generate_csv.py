@@ -11,7 +11,7 @@ def get_posteriors(sr, sigma=0.15):
 
     # (1) Calculate Lambda
     lam = sr[:-1].values * np.exp(GAMMA * (r_t_range[:, None] - 1))
-
+    lam += 10e-6
 
     # (2) Calculate each day's likelihood
     likelihoods = pd.DataFrame(
@@ -64,13 +64,35 @@ def get_posteriors(sr, sigma=0.15):
     return posteriors, log_likelihood
 
 
-def prepare_cases(cases, cutoff=3):
+def prepare_cases(cases, state_name, latest, cutoff=0):
+
     new_cases = cases.diff()
 
-    smoothed = new_cases.rolling(7,
+    # fill until latest
+    state = new_cases.xs(state_name)
+    if latest not in state:
+        new_cases = new_cases.append(pd.Series({(state_name, latest): 0}))
+
+    # fill NaN
+    first = new_cases.index[0]
+    new_cases.loc[first] = cases[0]
+
+    # fill 0
+    new_cases = new_cases.unstack(level=[0]).asfreq('D', fill_value=0).stack(level=[0]).swaplevel(1,0)
+
+    std = 2
+    window = 7
+    if new_cases.values.max() < 5:
+#         window = 3
+        std = 0.1
+    elif new_cases.values.max() < 25:
+        window = 5
+#         std = 1
+
+    smoothed = new_cases.rolling(window,
         win_type='gaussian',
         min_periods=1,
-        center=True).mean(std=2).round()
+        center=True).mean(std=std).round()
 
     idx_start = np.searchsorted(smoothed, cutoff)
 
@@ -100,7 +122,9 @@ def highest_density_interval(pmf, p=.9):
     low = pmf.index[lows[best]]
     high = pmf.index[highs[best]]
 
-    return pd.Series([low, high], index=[f'Low_{p*100:.0f}', f'High_{p*100:.0f}'])
+    return pd.Series([low, high],
+                     index=[f'Low_{p*100:.0f}',
+                            f'High_{p*100:.0f}'])
 
 
 url = 'https://dl.dropboxusercontent.com/s/6mztoeb6xf78g5w/COVID-19.csv'
@@ -140,11 +164,14 @@ results = {}
 
 for state_name, cases in states_to_process.groupby(level='pref'):
 
-    print(state_name)
-    new, smoothed = prepare_cases(cases, cutoff=0)
+    tokyo = states.xs('東京都')
+    latest = tokyo.index[-1]
 
-    if len(smoothed) == 0:
-        new, smoothed = prepare_cases(cases, cutoff=10)
+    print(state_name)
+    new, smoothed = prepare_cases(cases, state_name, latest, cutoff=0)
+
+#     if len(smoothed) == 0:
+#         new, smoothed = prepare_cases(cases, cutoff=0)
 
     result = {}
 
@@ -195,5 +222,5 @@ for state_name, result in results.items():
 
 print('Done.')
 
-
+# Export
 final_results.to_csv('rt_japan.csv', float_format='%.2f')
