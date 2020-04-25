@@ -83,11 +83,9 @@ def prepare_cases(cases, state_name, latest, cutoff=0):
     std = 2
     window = 7
     if new_cases.values.max() < 5:
-#         window = 3
         std = 0.1
     elif new_cases.values.max() < 25:
         window = 5
-#         std = 1
 
     smoothed = new_cases.rolling(window,
         win_type='gaussian',
@@ -169,9 +167,6 @@ for state_name, cases in states_to_process.groupby(level='pref'):
 
     print(state_name)
     new, smoothed = prepare_cases(cases, state_name, latest, cutoff=0)
-
-#     if len(smoothed) == 0:
-#         new, smoothed = prepare_cases(cases, cutoff=0)
 
     result = {}
 
