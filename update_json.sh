@@ -46,6 +46,8 @@ usort($json['latest'], function($a, $b){
     return $a['ML'] >= $b['ML'];
 });
 foreach (array_keys($citylist) as $code){
-    $json['data'][$code] = $data[$city];
+    if (isset($data[$code])){
+        $json['data'][$code] = $data[$code];
+    }
 }
 echo json_encode($json);
