@@ -21,17 +21,18 @@ $header = [];
 if ($fp = fopen('dist/rt_tokyo.csv', 'r')){
     while ($csv = fgetcsv($fp)){
         if (!$header){
-            $header = [2 => $csv[2], $csv[3], $csv[4], $csv[5], $csv[6]];
+            $header = [1 =>$csv[1], $csv[2], $csv[3], $csv[4], $csv[5], $csv[6]];
         }
         else {
             $city = $citycode[$csv[0]];
             if (!isset($data[$city])){
                 $data[$city] = [];
             }
-            $data[$city][$csv[1]] = [];
+            $date_data = [];
             foreach ($header as $i=>$key){
-                $data[$city][$csv[1]][$key] = $csv[$i];
+                $date_data[$key] = $csv[$i];
             }
+            $data[$city][]= $date_data;
         }
     }
 }
