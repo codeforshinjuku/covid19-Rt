@@ -125,27 +125,22 @@ def highest_density_interval(pmf, p=.9):
                             f'High_{p*100:.0f}'])
 
 
-url = 'data/nhk_news_covid19_prefectures_daily_data.csv'
+url = 'data/tokyo_patient_diff.csv'
 data = pd.read_csv(url,
-                     usecols=['日付', '都道府県名', '各地の感染者数_1日ごとの発表数'],
-                     parse_dates=['日付'],
+                     usecols=['発表日', '区市町村', '人数'],
+                     parse_dates=['発表日'],
                     ).sort_index()
 
 FILTERED_REGION = []
-PREF =  ['北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県',
-        '茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県',
-        '新潟県', '富山県', '石川県', '福井県', '山梨県', '長野県', '岐阜県',
-        '静岡県', '愛知県', '三重県', '滋賀県', '京都府', '大阪府', '兵庫県',
-        '奈良県', '和歌山県', '鳥取県', '島根県', '岡山県', '広島県', '山口県',
-        '徳島県', '香川県', '愛媛県', '高知県', '福岡県', '佐賀県', '長崎県',
-        '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県']
+
+PREF =  ['千代田区', '中央区', '港区', '新宿区', '文京区', '台東区', '墨田区', '江東区', '品川区', '目黒区', '大田区', '世田谷区', '渋谷区', '中野区', '杉並区', '豊島区', '北区', '荒川区', '板橋区', '練馬区', '足立区', '葛飾区', '江戸川区', '八王子市', '立川市', '武蔵野市', '三鷹市', '青梅市', '府中市', '昭島市', '調布市', '町田市', '小金井市', '小平市', '日野市', '東村山市', '国分寺市', '国立市', '福生市', '狛江市', '東大和市', '清瀬市', '東久留米市', '武蔵村山市', '多摩市', '稲城市', '羽村市', 'あきる野市', '西東京市', '瑞穂町', '日の出町', '檜原村', '奥多摩町', '大島町', '利島村', '新島村', '神津島村', '三宅村', '御蔵島村', '八丈町', '青ヶ島村', '小笠原村']
 
 df_all = pd.DataFrame()
 for pref in PREF:
-    ds = data.groupby(['日付', '都道府県名'], as_index=False).sum()
-    dsp = ds[ds['都道府県名']==pref]
-    dsp['累積人数'] = dsp['各地の感染者数_1日ごとの発表数'].cumsum()
-    dsp = dsp.rename(columns={'日付': 'date', '都道府県名': 'pref'})
+    ds = data.groupby(['発表日', '区市町村'], as_index=False).sum()
+    dsp = ds[ds['区市町村']==pref]
+    dsp['累積人数'] = dsp['人数'].cumsum()
+    dsp = dsp.rename(columns={'発表日': 'date', '区市町村': 'pref'})
     dspi = dsp.set_index(['pref', 'date'])
     df_all = pd.concat([df_all, dspi])
 states = df_all['累積人数']
@@ -162,7 +157,7 @@ results = {}
 
 for state_name, cases in states_to_process.groupby(level='pref'):
 
-    tokyo = states.xs('東京都')
+    tokyo = states.xs('新宿区')
     latest = tokyo.index[-1]
 
     print(state_name)
@@ -218,4 +213,4 @@ for state_name, result in results.items():
 print('Done.')
 
 # Export
-final_results.to_csv('dist/rt_japan.csv', float_format='%.2f')
+final_results.to_csv('dist/rt_tokyo.csv', float_format='%.2f')
